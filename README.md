@@ -1,4 +1,4 @@
 pyowl
 =====
 
-A basic library for working with OWL.
+A basic Python library for working with OWL.
