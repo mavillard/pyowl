@@ -4,29 +4,32 @@ from xml.etree import ElementTree as ET
 
 class Dictionary:
     def __init__(self, dictionary):
-        self.dict = dictionary
+        self._dict = dictionary
     
-    def reverse(self):
+    def get_dictionary(self):
+        return self._dict
+    
+    def get_reverse(self):
         d = {}
-        for k, v in self.dict.items():
+        for k, v in self._dict.items():
             d[v] = k
         return d
 
 
 class ElementTreeWriter:
     def __init__(self, root, dst, encoding='utf-8', method='xml'):
-        self.root = root
-        self.dst = dst
-        self.encod = encoding
-        self.method = method
+        self._root = root
+        self._dst = dst
+        self._encod = encoding
+        self._method = method
     
     def write(self, ns={}):
-        file_dst = open(self.dst, "w")
+        file_dst = open(self._dst, "w")
         file_dst.write('%s\n' % XMLNSParser.xml_declaration)
-        qnames, namespaces = ET._namespaces(self.root, self.encod, None)
-        namespaces.update(Dictionary(ns).reverse())
-        serialize = ET._serialize[self.method]
-        serialize(file_dst.write, self.root, self.encod, qnames, namespaces)
+        qnames, namespaces = ET._namespaces(self._root, self._encod, None)
+        namespaces.update(Dictionary(ns).get_reverse())
+        serialize = ET._serialize[self._method]
+        serialize(file_dst.write, self._root, self._encod, qnames, namespaces)
         file_dst.close()
 
 
@@ -35,34 +38,39 @@ class PathInfo:
     path_format = '^(.*/)?(\w+)(\.\w+)?$'
     
     def __init__(self, path):
-        self.path = path
+        self._path = path
         pattern = re.compile(self.path_format)
-        result = pattern.match(self.path)
+        result = pattern.match(self._path)
         if result:
             groups = result.groups()
-            self.file_dir = groups[0]
-            self.file_name_noext = groups[1]
-            self.file_name = "%s%s" % (groups[0], groups[1])
+            self._filedir = groups[0]
+            self._filename_noext = groups[1]
+            self._filename = '%s%s' % (groups[1], groups[2])
         
-    def get_file_name_noext(self):
-        return self.file_name_noext
+    def get_filename_noext(self):
+        return self._filename_noext
 
 
 class XMLNSParser:
+    common_xmlns = {
+        'xmlns:rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+        'xmlns:owl': 'http://www.w3.org/2002/07/owl#',
+        'xmlns:xsd': 'http://www.w3.org/2001/XMLSchema#',
+        'xmlns:rdfs': 'http://www.w3.org/2000/01/rdf-schema#'
+    }
     xml_declaration = '<?xml version="1.0"?>'
     
     def __init__(self, source):
         self._ns = self._parse(source)
     
-    def __repr__(self):
-        return '%s' % self._ns
-    
     def get_xmlns(self):
-        return self._ns
+        ns = XMLNSParser.common_xmlns.copy()
+        ns.update(self._ns)
+        return ns
     
     def get_xmlns_noprefix(self):
         ns = {}
-        for k in self._ns.keys():
+        for k in self.get_xmlns():
             i = k.find(':') 
             if i != -1:
                 ns[k[i+1:]] = self._ns[k]
