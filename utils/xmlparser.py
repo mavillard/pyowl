@@ -2,18 +2,7 @@
 import re
 from xml.etree import ElementTree as ET
 
-class Dictionary:
-    def __init__(self, dictionary):
-        self._dict = dictionary
-    
-    def get_dictionary(self):
-        return self._dict
-    
-    def get_reverse(self):
-        d = {}
-        for k, v in self._dict.items():
-            d[v] = k
-        return d
+from dictionary import Dictionary
 
 
 class ElementTreeWriter:
@@ -27,28 +16,10 @@ class ElementTreeWriter:
         file_dst = open(self._dst, "w")
         file_dst.write('%s\n' % XMLNSParser.xml_declaration)
         qnames, namespaces = ET._namespaces(self._root, self._encod, None)
-        namespaces.update(Dictionary(ns).get_reverse())
+        namespaces.update(Dictionary(ns).reverse())
         serialize = ET._serialize[self._method]
         serialize(file_dst.write, self._root, self._encod, qnames, namespaces)
         file_dst.close()
-
-
-
-class PathInfo:
-    path_format = '^(.*/)?(\w+)(\.\w+)?$'
-    
-    def __init__(self, path):
-        self._path = path
-        pattern = re.compile(self.path_format)
-        result = pattern.match(self._path)
-        if result:
-            groups = result.groups()
-            self._filedir = groups[0]
-            self._filename_noext = groups[1]
-            self._filename = '%s%s' % (groups[1], groups[2])
-        
-    def get_filename_noext(self):
-        return self._filename_noext
 
 
 class XMLNSParser:
