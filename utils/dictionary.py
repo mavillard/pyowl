@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-class Dictionary:
+class Dictionary(object):
     def __init__(self, dct):
         self.dct = dct
     

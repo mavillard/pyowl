@@ -5,7 +5,7 @@ from xml.etree import ElementTree as ET
 from dictionary import Dictionary
 
 
-class ElementTreeWriter:
+class ElementTreeWriter(ET.ElementTree):
     def __init__(self, root, dst, encoding='utf-8', method='xml'):
         self._root = root
         self._dst = dst
@@ -14,7 +14,7 @@ class ElementTreeWriter:
     
     def write(self, ns={}):
         file_dst = open(self._dst, "w")
-        file_dst.write('%s\n' % XMLNSParser.xml_declaration)
+        file_dst.write('{0}\n'.format(XMLNSParser.xml_declaration))
         qnames, namespaces = ET._namespaces(self._root, self._encod, None)
         namespaces.update(Dictionary(ns).reverse())
         serialize = ET._serialize[self._method]
@@ -22,7 +22,7 @@ class ElementTreeWriter:
         file_dst.close()
 
 
-class XMLNSParser:
+class XMLNSParser(object):
     common_xmlns = {
         'xmlns:rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
         'xmlns:owl': 'http://www.w3.org/2002/07/owl#',
@@ -71,7 +71,7 @@ class XMLNSParser:
                 else:
                     self._process_stack(stack, char)
                     if stack:
-                        string = '%s%s' % (string, char)
+                        string = '{0}{1}'.format(string, char)
         f.close()
         return ns
     
@@ -88,11 +88,10 @@ class XMLNSParser:
     
     def _process_ns(self, string):
         ns = {}
-        pattern = re.compile('\S+\s*=\s*"\S*"')
+        pattern = re.compile('(\S+)\s*=\s*"(\S*)"')
         matches = pattern.findall(string)
-        for match in matches:
-            tupl = match.split('=')
-            name = tupl[0].rstrip()
-            value = tupl[1].lstrip()[1:-1]
+        for groups in matches:
+            name = groups[0]
+            value = groups[1]
             ns[name] = value
         return ns

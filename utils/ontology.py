@@ -15,43 +15,44 @@ _vocab = {
 }
 
 
-class _OntoElem:
+class _OntoElem(object):
     def __init__(self, elem, onto):
         self._elem = elem
         self.onto = onto
         self.name = self._get_name()
     
     def __repr__(self):
-        return '<_OntoElem: %s>' % self._elem
+        return '<_OntoElem: {0}>'.format(self._elem)
     
     def _get_name(self):
-        kid = self._format_string('rdf', 'id')
-        kab = self._format_string('rdf', 'about')
-        if kid in self._elem.keys():
-            name = self._elem.get(kid)
-        elif kab in self._elem.keys():
-            name = self._elem.get(kab)[1:]
-        else:
-            name = None
+        kid = self._format_prop('rdf', 'id')
+        kab = self._format_prop('rdf', 'about')
+        name = self._elem.get(kab)
+        if name:
+            name = name[1:]
+        name = self._elem.get(kid, name)
         return name
     
-    def _format_string(self, prefix, term):
+    def _format_name(self, name):
+        return '{%s}%s' % (self.onto.ns_nopre[''], name)
+    
+    def _format_prop(self, prefix, term):
         return '{%s}%s' % (self.onto.ns_nopre[prefix], _vocab[term])
     
     def _is_class(self):
-        return self._elem.tag == self._format_string('owl', 'clss')
+        return self._elem.tag == self._format_prop('owl', 'clss')
     
-    def _is_datatypeproperty(self):
-        return self._elem.tag == self._format_string('owl', 'dttp')
-    
-    def _is_description(self):
-        return self._elem.tag == self._format_string('rdf', 'desc')
-    
-    def _is_instance(self):
+    def _is_class_instance(self):
         pass
     
+    def _is_datatypeproperty(self):
+        return self._elem.tag == self._format_prop('owl', 'dttp')
+    
+    def _is_description(self):
+        return self._elem.tag == self._format_prop('rdf', 'desc')
+    
     def _is_objectproperty(self):
-        return self._elem.tag == self._format_string('owl', 'objp')
+        return self._elem.tag == self._format_prop('owl', 'objp')
     
     def _is_property(self):
         return self._is_datatypeproperty(self) or self._is_objectproperty()
@@ -60,4 +61,4 @@ class _OntoElem:
         pass
     
     def _is_subclass_of(self):
-        return self._elem.tag == self._format_string('rdfs', 'subc')
+        return self._elem.tag == self._format_prop('rdfs', 'subc')

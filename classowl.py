@@ -1,31 +1,35 @@
 # -*- coding: utf-8 -*-
-from xml.etree import ElementTree as ET
-from xml.etree.ElementTree import Element, ElementTree
+from xml.etree.ElementTree import Element
 
 from utils.ontology import _vocab as vocab, _OntoElem as OE
 
 
 class Class(OE):
     def __init__(self, name, onto, elem=None):
-        self.name = name
-        self.onto = onto
-        if elem is not None:
-            self._elem = elem
-        else:
-            self._elem = self._create_element()
+        if elem is None:
+            elem = self._create_element(name)
+        super(Class, self).__init__(elem, onto)
     
     def __repr__(self):
-        return '<owl:%s %s>'% (vocab['clss'], self.name)
+        return '<owl:{0} {1}>'.format(vocab['clss'], self.name)
     
-    def _create_element(self):
-        tag = self._format_string('owl', 'clss')
-        key = self._format_string('rdf', 'id')
-        value = self.name
+    def _create_element(self, name):
+        tag = self._format_prop('owl', 'clss')
+        key = self._format_prop('rdf', 'id')
+        value = name
         attrib = {key: value}
         return Element(tag, attrib)
     
     def get_instances(self, indirect=False):
-        pass
+        instances = []
+        prefix_clss_name = self._format_name(self.name)
+        for instance in self.onto._root.iter(prefix_clss_name):
+            name = instance.get(self._format_prop('rdf', 'id'))
+            instances.append(name)
+        if indirect:
+            for c in self.get_subclasses():
+                instances += c.get_instances(indirect)
+        return instances
     
     def get_subclasses(self, indirect=False):
         classes = []
@@ -45,9 +49,6 @@ class Class(OE):
                 classes.append(c)
         return classes
     
-    def is_instance_of(self, instance, indirect=False):
-        pass
-    
     def is_mainclass(self):
         return not self.get_superclasses()
     
@@ -62,7 +63,7 @@ class Class(OE):
         for e1 in self._elem:
             oe1 = OE(e1, self.onto)
             if oe1._is_subclass_of():
-                rsrc = self._format_string('rdf', 'rsrc')
+                rsrc = self._format_prop('rdf', 'rsrc')
                 # <rdfs:subClassOf rdf:resource="#class_name"/>
                 rsrc_name = e1.attrib.get(rsrc)
                 if rsrc_name:
@@ -81,7 +82,7 @@ class Class(OE):
                         break
         if indirect:
             for c in cls.get_subclasses():
-                if self.is_subclass_of(c, True):
+                if self.is_subclass_of(c, indirect):
                     is_subclass = True
                     break
         return is_subclass
